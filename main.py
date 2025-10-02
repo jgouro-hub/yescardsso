@@ -77,48 +77,29 @@ def login():
 
     return redirect(f"{redirect_uri}?code={code}&state={state}")
 
-# -------------------------------------------------------------------
-# Token endpoint
-@app.route("/token", methods=["POST"])
-def token():
-    code = request.form.get("code", "")
-    scope = request.form.get("scope", "openid profile email")
-
-    # Extract email from code, fallback to default
-    if code.startswith("dummy-code-"):
-        email = code.replace("dummy-code-", "")
-    else:
-        email = DEFAULT_EMAIL
-
-    user = {
-        "sub": "123456",
-        "name": "Yes Card User",
-        "email": email,
-        "account": "ACME Corp",
-        "services": ["EQCORPORATEPLUS"],
-        "rights": ["read", "write", "delete"]
-    }
-
-    return jsonify({
-        "access_token": "dummy-access-token-1234",
-        "token_type": "Bearer",
-        "expires_in": 3600,
-        "id_token": f"dummy-id-token-for-{email}",
-        "userinfo": user
-    })
 
 # -------------------------------------------------------------------
 # Userinfo endpoint
 @app.route("/userinfo")
 def userinfo():
-    # If Bearer token existed → decode. Here we just return dummy.
-    email = request.args.get("email", DEFAULT_EMAIL)
+    # Get token from Authorization header
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+    else:
+        token = ""
+
+    # Extract email from dummy token
+    if token.startswith("dummy-access-token-for-"):
+        email = token.replace("dummy-access-token-for-", "")
+    else:
+        email = DEFAULT_EMAIL
+
     return jsonify({
         "sub": "123456",
-        "firstName": "E2E",
-        "lastName": "Tester",
+        "name": "Yes Card User",
         "email": email,
-        "account": "QuestelQACorp",
+        "account": "ACME Corp",
         "services": ["EQCORPORATEPLUS"],
         "rights": ["read", "write", "delete"]
     })
