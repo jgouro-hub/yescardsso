@@ -95,6 +95,9 @@ def token():
         "sub": "123456",
         "name": "Yes Card User",
         "email": email,
+        "name": "Yes Card User",
+        "lastName":"Assurance User",
+        "firstName":"Quality",
         "account": "ACME Corp",
         "services": ["EQCORPORATEPLUS"],
         "rights": ["read", "write", "delete"]
