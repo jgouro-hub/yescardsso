@@ -115,9 +115,10 @@ def userinfo():
     email = request.args.get("email", DEFAULT_EMAIL)
     return jsonify({
         "sub": "123456",
-        "name": "Yes Card User",
+        "firstName": "E2E",
+        "lastName": "Tester",
         "email": email,
-        "account": "ACME Corp",
+        "account": "QuestelQACorp",
         "services": ["EQCORPORATEPLUS"],
         "rights": ["read", "write", "delete"]
     })
