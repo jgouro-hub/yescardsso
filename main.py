@@ -76,7 +76,37 @@ def login():
     code = f"dummy-code-{email}"
 
     return redirect(f"{redirect_uri}?code={code}&state={state}")
+# -------------------------------------------------------------------
+# Token endpoint
+@app.route("/token", methods=["POST"])
+def token():
+    code = request.form.get("code", "")
+    scope = request.form.get("scope", "openid profile email")
 
+    # Extract email from code, fallback to default
+    if code.startswith("dummy-code-"):
+        email = code.replace("dummy-code-", "")
+    else:
+        email = DEFAULT_EMAIL
+
+    access_token = f"dummy-access-token-for-{email}"
+
+    user = {
+        "sub": "123456",
+        "name": "Yes Card User",
+        "email": email,
+        "account": "ACME Corp",
+        "services": ["EQCORPORATEPLUS"],
+        "rights": ["read", "write", "delete"]
+    }
+
+    return jsonify({
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "id_token": f"dummy-id-token-for-{email}",
+        "userinfo": user
+    })
 
 # -------------------------------------------------------------------
 # Userinfo endpoint
