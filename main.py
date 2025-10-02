@@ -128,6 +128,8 @@ def userinfo():
     return jsonify({
         "sub": "123456",
         "name": "Yes Card User",
+        "lastName":"Assurance User",
+        "firstName":"Quality",
         "email": email,
         "account": "ACME Corp",
         "services": ["EQCORPORATEPLUS"],
