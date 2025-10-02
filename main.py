@@ -23,7 +23,7 @@ def openid_config():
         "response_types_supported": ["code", "token", "id_token"],
         "subject_types_supported": ["public"],
         "id_token_signing_alg_values_supported": ["none"],
-        "claims_supported": ["sub", "name", "email", "account", "services", "rights"]
+        "claims_supported": ["sub", "name", "firstName", "lastName", "email", "account", "services", "rights"]
     })
 
 # -------------------------------------------------------------------
@@ -95,7 +95,6 @@ def token():
         "sub": "123456",
         "name": "Yes Card User",
         "email": email,
-        "name": "Yes Card User",
         "lastName":"Assurance User",
         "firstName":"Quality",
         "account": "ACME Corp",
