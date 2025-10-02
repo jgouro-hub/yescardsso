@@ -1,19 +1,16 @@
-from flask import Flask, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify, redirect, url_for, render_template_string
 
 app = Flask(__name__)
 
-# Dummy user data
-DUMMY_USER = {
-    "sub": "123456",
-    "name": "Yes Card User",
-    "email": "yescard@example.com",
-    "roles": ["admin", "tester"]
-}
-
 # Dummy OIDC provider config
 ISSUER = "http://localhost:5000"
+SUPPORTED_SCOPES = ["openid", "profile", "email", "account", "services", "rights"]
 
-# 1. Discovery document
+# Default Salesforce scratch org admin email
+DEFAULT_EMAIL = "admin@scratchorg.com"
+
+# -------------------------------------------------------------------
+# Discovery document
 @app.route("/.well-known/openid-configuration")
 def openid_config():
     return jsonify({
@@ -22,15 +19,17 @@ def openid_config():
         "token_endpoint": f"{ISSUER}/token",
         "userinfo_endpoint": f"{ISSUER}/userinfo",
         "jwks_uri": f"{ISSUER}/jwks.json",
+        "scopes_supported": SUPPORTED_SCOPES,
         "response_types_supported": ["code", "token", "id_token"],
         "subject_types_supported": ["public"],
-        "id_token_signing_alg_values_supported": ["none"],  # no signature (yes-card)
+        "id_token_signing_alg_values_supported": ["none"],
+        "claims_supported": ["sub", "name", "email", "account", "services", "rights"]
     })
 
-# 2. JWKS (normally used to verify tokens) → here dummy
+# -------------------------------------------------------------------
+# Dummy JWKS
 @app.route("/jwks.json")
 def jwks():
-    # Normally you'd publish real RSA/ECDSA keys
     return jsonify({
         "keys": [
             {
@@ -43,33 +42,94 @@ def jwks():
         ]
     })
 
-# 3. /authorize endpoint
+# -------------------------------------------------------------------
+# Authorization endpoint (with login form)
 @app.route("/authorize")
 def authorize():
     redirect_uri = request.args.get("redirect_uri", url_for("callback", _external=True))
-    code = "dummy-code-1234"  # always the same
-    return redirect(f"{redirect_uri}?code={code}")
+    state = request.args.get("state", "")
+    scope = request.args.get("scope", "openid profile email")
 
-# 4. /token endpoint
+    form_html = f"""
+    <html>
+      <body>
+        <h2>Yes-Card SSO Login</h2>
+        <form method="post" action="/login">
+          <input type="hidden" name="redirect_uri" value="{redirect_uri}">
+          <input type="hidden" name="state" value="{state}">
+          <input type="hidden" name="scope" value="{scope}">
+          Email: <input type="text" name="email" value="{DEFAULT_EMAIL}"><br>
+          <button type="submit">Login</button>
+        </form>
+      </body>
+    </html>
+    """
+    return render_template_string(form_html)
+
+@app.route("/login", methods=["POST"])
+def login():
+    redirect_uri = request.form["redirect_uri"]
+    state = request.form.get("state", "")
+    email = request.form.get("email", DEFAULT_EMAIL)
+
+    # Encode email into "code"
+    code = f"dummy-code-{email}"
+
+    return redirect(f"{redirect_uri}?code={code}&state={state}")
+
+# -------------------------------------------------------------------
+# Token endpoint
 @app.route("/token", methods=["POST"])
 def token():
+    code = request.form.get("code", "")
+    scope = request.form.get("scope", "openid profile email")
+
+    # Extract email from code, fallback to default
+    if code.startswith("dummy-code-"):
+        email = code.replace("dummy-code-", "")
+    else:
+        email = DEFAULT_EMAIL
+
+    user = {
+        "sub": "123456",
+        "name": "Yes Card User",
+        "email": email,
+        "account": "ACME Corp",
+        "services": ["EQCORPORATEPLUS"],
+        "rights": ["read", "write", "delete"]
+    }
+
     return jsonify({
         "access_token": "dummy-access-token-1234",
         "token_type": "Bearer",
         "expires_in": 3600,
-        "id_token": "dummy-id-token-1234"  # would normally be JWT
+        "id_token": f"dummy-id-token-for-{email}",
+        "userinfo": user
     })
 
-# 5. /userinfo endpoint
+# -------------------------------------------------------------------
+# Userinfo endpoint
 @app.route("/userinfo")
 def userinfo():
-    return jsonify(DUMMY_USER)
+    # If Bearer token existed → decode. Here we just return dummy.
+    email = request.args.get("email", DEFAULT_EMAIL)
+    return jsonify({
+        "sub": "123456",
+        "name": "Yes Card User",
+        "email": email,
+        "account": "ACME Corp",
+        "services": ["EQCORPORATEPLUS"],
+        "rights": ["read", "write", "delete"]
+    })
 
-# 6. /callback (simulated client app)
+# -------------------------------------------------------------------
+# Callback (for manual testing in browser)
 @app.route("/callback")
 def callback():
     code = request.args.get("code", "dummy-code-1234")
-    return f"✅ Logged in with code: {code}"
+    state = request.args.get("state", "")
+    return f"✅ Logged in with code={code}, state={state}"
 
+# -------------------------------------------------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
