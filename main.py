@@ -8,7 +8,7 @@ ISSUER = "http://localhost:5000"
 SUPPORTED_SCOPES = ["openid", "profile", "email", "account", "services", "rights"]
 
 # Default Salesforce scratch org admin email
-DEFAULT_EMAIL = "admin@scratchorg.com"
+DEFAULT_EMAIL = "admin@questel.com"
 
 # -------------------------------------------------------------------
 # Discovery document
@@ -77,9 +77,13 @@ def login():
     state = request.form.get("state", "")
     email = request.form.get("email", DEFAULT_EMAIL)
 
-    # ✅ Guard again (POST flow)
+    # ✅ Guard again (redirect_uri)
     if "scratch.my.salesforce.com" not in redirect_uri:
         abort(500, description="Invalid redirect_uri (must include scratch.my.salesforce.com)")
+
+    # ✅ Guard for email domain
+    if not email.endswith("@questel.com"):
+        abort(500, description="Invalid email (must be @questel.com)")
 
     # Encode email into "code"
     code = f"dummy-code-{email}"
@@ -98,6 +102,10 @@ def token():
         email = code.replace("dummy-code-", "")
     else:
         email = DEFAULT_EMAIL
+
+    # ✅ Guard for email domain
+    if not email.endswith("@questel.com"):
+        abort(500, description="Invalid email (must be @questel.com)")
 
     access_token = f"dummy-access-token-for-{email}"
 
@@ -136,6 +144,10 @@ def userinfo():
         email = token.replace("dummy-access-token-for-", "")
     else:
         email = DEFAULT_EMAIL
+
+    # ✅ Guard for email domain
+    if not email.endswith("@questel.com"):
+        abort(500, description="Invalid email (must be @questel.com)")
 
     return jsonify({
         "sub": "123456",
