@@ -63,7 +63,7 @@ def authorize():
           <input type="hidden" name="redirect_uri" value="{redirect_uri}">
           <input type="hidden" name="state" value="{state}">
           <input type="hidden" name="scope" value="{scope}">
-          Email: <input type="text" name="email" value="{DEFAULT_EMAIL}"><br>
+          Email: <input type="text" name="email" value=""><br>
           <button type="submit">Login</button>
         </form>
       </body>
