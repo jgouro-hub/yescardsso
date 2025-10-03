@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify, redirect, url_for, render_template_string
+from flask import Flask, request, jsonify, redirect, url_for, render_template_string, abort
 
 app = Flask(__name__)
 
+# -------------------------------------------------------------------
 # Dummy OIDC provider config
 ISSUER = "http://localhost:5000"
 SUPPORTED_SCOPES = ["openid", "profile", "email", "account", "services", "rights"]
@@ -34,7 +35,7 @@ def jwks():
         "keys": [
             {
                 "kty": "oct",
-                "kid": "yescard-key",
+                "kid": "e2e-oidc-key",
                 "use": "sig",
                 "alg": "HS256",
                 "k": "dummy-secret-key-base64"
@@ -50,10 +51,14 @@ def authorize():
     state = request.args.get("state", "")
     scope = request.args.get("scope", "openid profile email")
 
+    # ✅ Guard for Salesforce scratch org redirect
+    if "scratch.my.salesforce.com" not in redirect_uri:
+        abort(500, description="Invalid redirect_uri (must include scratch.my.salesforce.com)")
+
     form_html = f"""
     <html>
       <body>
-        <h2>Yes-Card SSO Login</h2>
+        <h2>E2E OIDC Login</h2>
         <form method="post" action="/login">
           <input type="hidden" name="redirect_uri" value="{redirect_uri}">
           <input type="hidden" name="state" value="{state}">
@@ -72,10 +77,15 @@ def login():
     state = request.form.get("state", "")
     email = request.form.get("email", DEFAULT_EMAIL)
 
+    # ✅ Guard again (POST flow)
+    if "scratch.my.salesforce.com" not in redirect_uri:
+        abort(500, description="Invalid redirect_uri (must include scratch.my.salesforce.com)")
+
     # Encode email into "code"
     code = f"dummy-code-{email}"
 
     return redirect(f"{redirect_uri}?code={code}&state={state}")
+
 # -------------------------------------------------------------------
 # Token endpoint
 @app.route("/token", methods=["POST"])
@@ -93,10 +103,10 @@ def token():
 
     user = {
         "sub": "123456",
-        "name": "Yes Card User",
+        "name": "E2E OIDC User",
         "email": email,
-        "lastName":"Assurance User",
-        "firstName":"Quality",
+        "lastName": "Assurance",
+        "firstName": "Quality",
         "account": "ACME Corp",
         "services": ["EQCORPORATEPLUS"],
         "rights": ["read", "write", "delete"]
@@ -129,9 +139,9 @@ def userinfo():
 
     return jsonify({
         "sub": "123456",
-        "name": "Yes Card User",
-        "lastName":"Assurance User",
-        "firstName":"Quality",
+        "name": "E2E OIDC User",
+        "lastName": "Assurance",
+        "firstName": "Quality",
         "email": email,
         "account": "ACME Corp",
         "services": ["EQCORPORATEPLUS"],
