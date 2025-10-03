@@ -147,7 +147,7 @@ def userinfo():
 
     # ✅ Guard for email domain
     if not email.endswith("@questel.com"):
-        abort(500, description="Invalid email (must be @questel.com)")
+        abort(500, description="Invalid email")
 
     return jsonify({
         "sub": "123456",
