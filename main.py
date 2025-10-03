@@ -53,7 +53,7 @@ def authorize():
 
     # ✅ Guard for Salesforce scratch org redirect
     if "scratch.my.salesforce.com" not in redirect_uri:
-        abort(500, description="Invalid redirect_uri (must include scratch.my.salesforce.com)")
+        abort(500, description="Invalid redirect_uri ")
 
     form_html = f"""
     <html>
