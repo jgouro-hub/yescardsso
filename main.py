@@ -128,6 +128,18 @@ def token():
         "userinfo": user
     })
 
+
+# -------------------------------------------------------------------
+# Health check endpoint
+@app.route("/selfTest")
+def self_test():
+    return jsonify({
+        "status": "ok",
+        "service": "E2E OIDC Provider",
+        "version": "1.0.0"
+    }), 200
+
+
 # -------------------------------------------------------------------
 # Userinfo endpoint
 @app.route("/userinfo")
